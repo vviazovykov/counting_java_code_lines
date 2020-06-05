@@ -4,51 +4,56 @@ import java.io.*;
 
 public class CodeLineCounter {
 
+    private static final String EMPTY_STRING = "";
+    private static final String DOUBLE_SLASH_STRING = "//";
+    private static final String STAR_SLASH_STRING = "*/";
+    private static final String SLASH_STAR_STRING = "/*";
+    private static final String QUOTE_STRING = "\"";
+
     /**
-     * Get number of code lines
+     * Get number of code lines.
      *
-     * @param fullFileName  - full file name path
-     * @return
+     * @param file  - file or directory.
+     * @return number of code lines.
      * @throws IOException
      */
-    public static int getNumberOfLines(String fullFileName) {
+    public int getNumberOfLines(File file) {
 
         int count = 0;
-        File file = new File(fullFileName);
 
         File[] files;
         if (file.exists() && file.isDirectory()) {
             files = file.listFiles();
             for (File f : files) {
                 if (f.isDirectory()) {
-                    count = count + getNumberOfLines(f.getAbsolutePath());
+                    count = count + getNumberOfLines(f);
                 } else {
-                    count = count + getNumberOfLines_2(f);
+                    count = count + getNumberOfFileLines(f);
                 }
             }
         } else {
-            count = count + getNumberOfLines_2(file);
+            count = count + getNumberOfFileLines(file);
         }
         return count;
     }
 
-    private static int getNumberOfLines_2(File file) {
+    private int getNumberOfFileLines(File file) {
         int count = 0;
-        boolean commentBegan = false;
+        boolean commentStarted = false;
         String line = null;
         BufferedReader buffReader = null;
         try {
             buffReader = new BufferedReader(new FileReader(file));
             while ((line = buffReader.readLine()) != null) {
                 line = line.trim();
-                if ("".equals(line) || line.startsWith("//")) {
+                if (EMPTY_STRING.equals(line) || line.startsWith(DOUBLE_SLASH_STRING)) {
                     continue;
                 }
-                if (commentBegan) {
+                if (commentStarted) {
                     if (commentEnded(line)) {
-                        line = line.substring(line.indexOf("*/") + 2).trim();
-                        commentBegan = false;
-                        if ("".equals(line) || line.startsWith("//")) {
+                        line = line.substring(line.indexOf(STAR_SLASH_STRING) + 2).trim();
+                        commentStarted = false;
+                        if (EMPTY_STRING.equals(line) || line.startsWith(DOUBLE_SLASH_STRING)) {
                             continue;
                         }
                     } else
@@ -57,8 +62,8 @@ public class CodeLineCounter {
                 if (isSourceCodeLine(line)) {
                     count++;
                 }
-                if (commentBegan(line)) {
-                    commentBegan = true;
+                if (commentStarted(line)) {
+                    commentStarted = true;
                 }
             }
         } catch (FileNotFoundException e) {
@@ -67,22 +72,22 @@ public class CodeLineCounter {
             e.printStackTrace();
         }
         return count;
-
     }
 
     /**
+     * Checks if in the given line a comment has started and has not ended.
      *
      * @param line
-     * @return This method checks if in the given line a comment has begun and has not ended
+     * @return true if a comment has started and has not ended, false otherwise.
      */
-    private static boolean commentBegan(String line) {
-        // If line = /* */, this method will return false
-        // If line = /* */ /*, this method will return true
-        int index = line.indexOf("/*");
+    private boolean commentStarted(String line) {
+        // it returns true if line = /* */ /*
+        // it returns false if line = /* */
+        int index = line.indexOf(SLASH_STAR_STRING);
         if (index < 0) {
             return false;
         }
-        int quoteStartIndex = line.indexOf("\"");
+        int quoteStartIndex = line.indexOf(QUOTE_STRING);
         if (quoteStartIndex != -1 && quoteStartIndex < index) {
             while (quoteStartIndex > -1) {
                 line = line.substring(quoteStartIndex + 1);
@@ -90,28 +95,29 @@ public class CodeLineCounter {
                 line = line.substring(quoteEndIndex + 1);
                 quoteStartIndex = line.indexOf("\"");
             }
-            return commentBegan(line);
+            return commentStarted(line);
         }
         return !commentEnded(line.substring(index + 2));
     }
 
     /**
+     * Checks if in the given line a comment has ended and no new comment has not started.
      *
      * @param line
-     * @return This method checks if in the given line a comment has ended and no new comment has not begun
+     * @return true if comment has ended and no new comment has not started, false otherwise.
      */
-    private static boolean commentEnded(String line) {
-        // If line = */ /* , this method will return false
-        // If line = */ /* */, this method will return true
-        int index = line.indexOf("*/");
+    private boolean commentEnded(String line) {
+        // it returns true if line = */ /* */
+        // it returns false if line = */ /*
+        int index = line.indexOf(STAR_SLASH_STRING);
         if (index < 0) {
             return false;
         } else {
             String subString = line.substring(index + 2).trim();
-            if ("".equals(subString) || subString.startsWith("//")) {
+            if (EMPTY_STRING.equals(subString) || subString.startsWith(DOUBLE_SLASH_STRING)) {
                 return true;
             }
-            if(commentBegan(subString))
+            if(commentStarted(subString))
             {
                 return false;
             }
@@ -123,27 +129,28 @@ public class CodeLineCounter {
     }
 
     /**
+     * This method will work only if we are sure that comment has not already started previously.
+     * Hence, this method should be called only after {@link #commentStarted(String)} is called.
+     * It does not worry if comment has started or not.
      *
      * @param line
-     * @return This method returns true if there is any valid source code in the given input line. It does not worry if comment has begun or not.
-     * This method will work only if we are sure that comment has not already begun previously. Hence, this method should be called only after {@link #commentBegan(String)} is called
+     * @return true if there is any valid source code in the given input line, false otherwise.
      */
-    private static boolean isSourceCodeLine(String line) {
-        boolean isSourceCodeLine = false;
+    private boolean isSourceCodeLine(String line) {
         line = line.trim();
-        if ("".equals(line) || line.startsWith("//")) {
-            return isSourceCodeLine;
+        if (EMPTY_STRING.equals(line) || line.startsWith(DOUBLE_SLASH_STRING)) {
+            return false;
         }
         if (line.length() == 1) {
             return true;
         }
-        int index = line.indexOf("/*");
+        int index = line.indexOf(SLASH_STAR_STRING);
         if (index != 0) {
             return true;
         } else {
             while (line.length() > 0) {
                 line = line.substring(index + 2);
-                int endCommentPosition = line.indexOf("*/");
+                int endCommentPosition = line.indexOf(STAR_SLASH_STRING);
                 if (endCommentPosition < 0) {
                     return false;
                 }
@@ -152,19 +159,18 @@ public class CodeLineCounter {
                 } else {
                     String subString = line.substring(endCommentPosition + 2)
                             .trim();
-                    if ("".equals(subString) || subString.indexOf("//") == 0) {
+                    if (EMPTY_STRING.equals(subString) || subString.indexOf(DOUBLE_SLASH_STRING) == 0) {
                         return false;
                     } else {
-                        if (subString.startsWith("/*")) {
+                        if (subString.startsWith(SLASH_STAR_STRING)) {
                             line = subString;
                             continue;
                         }
                         return true;
                     }
                 }
-
             }
         }
-        return isSourceCodeLine;
+        return false;
     }
 }

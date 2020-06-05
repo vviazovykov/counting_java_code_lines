@@ -1,109 +1,80 @@
 package com.vviazovykov.cloc;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.Scanner;
 
 /**
  * Runner of the application
- *
  */
-public class Runner
-{
-    public Runner() throws IOException {
+public class Runner {
+
+    private static final String INDENT_STRING = "  ";
+    private static final String ZERO_STRING = "0";
+    private static final int INDENT_VALUE = 1;
+
+    private final CodeLineCounter codeLineCounter;
+
+    public Runner(CodeLineCounter codeLineCounter) {
+        this.codeLineCounter = codeLineCounter;
     }
 
     public static void main(String[] args ) {
 
-        String fileName = "D:\\TEST_3\\counting_java_code_lines\\src\\main\\java\\com\\vviazovykov\\cloc\\TestClass.java";
-
-        CodeLineCounter lineCounter = new CodeLineCounter();
-
-        int lineNumber = lineCounter.getNumberOfLines(fileName);
-        System.out.println("lineNumber=" + lineNumber);
-
-
-        Path start = Paths.get("D:\\TEST_3\\counting_java_code_lines\\src");
-        List<String> collect = null;
-        try (Stream<Path> stream = Files.walk(start, Integer.MAX_VALUE)) {
-            collect = stream
-                    .map(String::valueOf)
-                    .sorted()
-                    .collect(Collectors.toList());
-
-            collect.forEach(System.out::println);
-        } catch (IOException e) {
-            e.printStackTrace();
+        boolean runApp = true;
+        while (runApp) {
+            System.out.println(
+                    "\nPlease, provide full path to file or directory " +
+                            "(ex: D:\\TEST_3\\counting_java_code_lines\\src) and press enter. " +
+                            "To exit, press \"0\":\n"
+            );
+            Scanner scanner = new Scanner(System.in);
+            String fileOrDirectoryPath = scanner.nextLine();
+            if (fileOrDirectoryPath == null || fileOrDirectoryPath.isEmpty()) {
+                continue;
+            } else if (fileOrDirectoryPath.equals(ZERO_STRING)) {
+                runApp = false;
+            } else {
+                startCountNumberOfLines(fileOrDirectoryPath);
+            }
         }
-        System.out.println("!!!!!!!!!!!!!!!!!!!!!");
-
-        System.out.println("333333333333333333");
-
-        fileTree(new File("D:\\TEST_3\\counting_java_code_lines\\src"), 0);
-
-        //listDirectory("D:\\TEST_3\\counting_java_code_lines\\src", 0);
-
-        /*Map<String, Integer> map = collect.stream().collect(Collectors.toMap(Function.identity(), CodeLineCounter::getNumberOfLines));
-
-        map.forEach((k, v) -> System.out.println((k + " : " + v)));
-
-        System.out.println("22222222222222222222222222222222");
-        for (Map.Entry<String, Integer> entry : map.entrySet()) {
-            System.out.println(entry.getKey() + " : " + entry.getValue());
-        }
-
-
-        System.out.println("333333333333333333");
-
-        fileTree(new File("D:\\TEST_3\\counting_java_code_lines\\src"), 0);*/
-
     }
 
-    public static void fileTree(File mainfolder, int indent) {
+    private static void startCountNumberOfLines(String fileOrDirectoryPath) {
+
+        CodeLineCounter codeLineCounter = new CodeLineCounter();
+        Runner runner = new Runner(codeLineCounter);
+
+        File file = new File(fileOrDirectoryPath);
+        System.out.println("Number of java file code lines is:");
+        System.out.println(file.getName() + " : " + runner.getNumberOfLines(file));
+        runner.fileTree(file, INDENT_VALUE);
+    }
+
+    private void fileTree(File rootFolder, int indent) {
 
         int temp;
+        for (File file : rootFolder.listFiles()) {
 
-        for (File file : mainfolder.listFiles()) {
-            for(int i = 0; i < indent; i++) {
-                System.out.print("  ");
+            for (int i = 0; i < indent; i++) {
+                System.out.print(INDENT_STRING);
             }
+
             temp = indent;
             if (file.isDirectory()) {
-
                 indent++;
-                System.out.println(file.getName() + " : " + CodeLineCounter.getNumberOfLines(file.getAbsolutePath()));
+                System.out.println(file.getName() + " : " + getNumberOfLines(file));
 
                 fileTree(file, indent);
                 indent--;
 
             } else if (file.isFile()) {
-
-                System.out.println(file.getName() + " : " + CodeLineCounter.getNumberOfLines(file.getAbsolutePath()));
+                System.out.println(file.getName() + " : " + getNumberOfLines(file));
                 indent = temp;
             }
         }
     }
 
-    public static void listDirectory(String dirPath, int level) {
-        File dir = new File(dirPath);
-        File[] firstLevelFiles = dir.listFiles();
-        if (firstLevelFiles != null && firstLevelFiles.length > 0) {
-            for (File aFile : firstLevelFiles) {
-                for (int i = 0; i < level; i++) {
-                    System.out.print("\t");
-                }
-                if (aFile.isDirectory()) {
-                    System.out.println("[" + aFile.getName() + "] : "  );
-                    listDirectory(aFile.getAbsolutePath(), level + 1);
-                } else {
-                    System.out.println(aFile.getName());
-                }
-            }
-        }
+    private int getNumberOfLines(File file) {
+        return codeLineCounter.getNumberOfLines(file);
     }
 }
