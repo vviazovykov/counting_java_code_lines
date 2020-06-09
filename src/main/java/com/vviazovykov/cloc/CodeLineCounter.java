@@ -70,6 +70,14 @@ public class CodeLineCounter {
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            if ( buffReader != null ) {
+                try {
+                    buffReader.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
         }
         return count;
     }

@@ -11,6 +11,7 @@ public class Runner {
     private static final String INDENT_STRING = "  ";
     private static final String ZERO_STRING = "0";
     private static final int INDENT_VALUE = 1;
+    private static final String COLON_SEPARATOR = " : ";
 
     private final CodeLineCounter codeLineCounter;
 
@@ -46,7 +47,7 @@ public class Runner {
 
         File file = new File(fileOrDirectoryPath);
         System.out.println("Number of java file code lines is:");
-        System.out.println(file.getName() + " : " + runner.getNumberOfLines(file));
+        System.out.println(file.getName() + COLON_SEPARATOR + runner.getNumberOfLines(file));
         runner.fileTree(file, INDENT_VALUE);
     }
 
@@ -62,13 +63,13 @@ public class Runner {
             temp = indent;
             if (file.isDirectory()) {
                 indent++;
-                System.out.println(file.getName() + " : " + getNumberOfLines(file));
+                System.out.println(file.getName() + COLON_SEPARATOR + getNumberOfLines(file));
 
                 fileTree(file, indent);
                 indent--;
 
             } else if (file.isFile()) {
-                System.out.println(file.getName() + " : " + getNumberOfLines(file));
+                System.out.println(file.getName() + COLON_SEPARATOR + getNumberOfLines(file));
                 indent = temp;
             }
         }
