@@ -24,7 +24,8 @@ public class Runner {
         boolean runApp = true;
         while (runApp) {
             System.out.println(
-                    "\nPlease, provide full path to file or directory " +
+                    "\nTo get the Code Line Numbers of your java file, \n" +
+                            "please, provide full path to file or directory " +
                             "(ex: D:\\TEST_3\\counting_java_code_lines\\src) and press enter. " +
                             "To exit, press \"0\":\n"
             );
